@@ -51,6 +51,14 @@ if not exists(license_index_cache_dir):
 MIN_MATCH_LENGTH = 4
 MIN_MATCH_HIGH_LENGTH = 3
 
+# FIXME: we should consider the length of two rules and two matches when considering MAX_DIST
+# eventually this should be skipped early right during the matching too
 # maximum distance between two matches to merge
 MAX_DIST = 120
+
+
+MATCH_HASH = '1-hash'
+MATCH_AHO_EXACT = '2-aho'
+MATCH_SEQ = '3-seq'
+MATCH_AHO_FRAG = '5-aho-frag'
 

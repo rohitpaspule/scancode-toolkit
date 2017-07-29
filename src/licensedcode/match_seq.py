@@ -24,7 +24,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-
+from licensedcode import MATCH_SEQ
 from licensedcode.match import get_texts
 from licensedcode.match import LicenseMatch
 from licensedcode.seq import match_blocks
@@ -52,7 +52,6 @@ Matching strategy using pair-wise multiple local sequences alignment and diff-
 like approaches.
 """
 
-MATCH_SEQ = '3-seq'
 
 def match_sequence(idx, candidate, query_run, start_offset=0):
     """

@@ -28,6 +28,8 @@ from array import array
 
 import ahocorasick
 
+from licensedcode import MATCH_AHO_EXACT
+from licensedcode import MATCH_AHO_FRAG
 from licensedcode.match import LicenseMatch
 from licensedcode.spans import Span
 
@@ -78,10 +80,6 @@ def add_sequence(automaton, tids, rid, start=0):
         existing.add(value)
     else:
         automaton.add_word(tokens, set([value]))
-
-
-MATCH_AHO_EXACT = '2-aho'
-MATCH_AHO_FRAG = '5-aho-frag'
 
 
 def exact_match(idx, query_run, automaton):

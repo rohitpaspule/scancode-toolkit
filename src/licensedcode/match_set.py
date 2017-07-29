@@ -264,7 +264,15 @@ tids_set_counter = tids_inbitset_counter
 
 CandidateData = namedtuple('CandidateData', 'intersection distance matched_length high_inter_len low_inter_len')
 
+# FIXME: we should consider existing aho matches when considering candidate
+# and not rematch these at all
 
+# FIXME: we should consider more aggressively the thresholds and what a match filters
+# would discard when we compute candaites to eventually discard many or all candidates
+# we compute too many candidates that may waste time in seq matching for no reason
+
+# FIXME: Also we should remove any weak and or small rules from the top candidates
+# and anything that cannot be seq matched at all. (e.g. no high match)
 def compute_candidates(query_run, idx, rules_subset, top=30):
     """
     Return a ranked list of rule candidates for further matching as a tuple of:
@@ -296,7 +304,7 @@ def compute_candidates(query_run, idx, rules_subset, top=30):
     # perform two steps of matching:
     # step one with sets and step two multisets for refinements
     for step in 'sets', 'multisets':
-        if TRACE_ULTRA_DEEP: logger_debug('compute_candidates: STEP:', step)
+        if TRACE: logger_debug('compute_candidates: STEP:', step)
         sortable_candidates = []
 
         for rid, rule, _intersection in candidates:

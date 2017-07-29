@@ -54,25 +54,25 @@ def find_longest_match(a, b, alo, ahi, blo, bhi, b2j, len_junk, matchables):
     # during an iteration of the loop, j2len[j] = length of longest
     # junk-free match ending with a[i-1] and b[j]
     j2len = {}
-    j2lenget = j2len.get
-    nothing = []
+    j2len_get = j2len.get
+
     for i in range(alo, ahi):
         if not i in matchables:
             continue
         # look at all instances of a[i] in b; note that because
         # b2j has no junk token, the loop is skipped if a[i] is junk
         newj2len = {}
-        for j in b2j_get(a[i], nothing):
+        for j in b2j_get(a[i], []):
             # a[i] matches b[j]
             if j < blo:
                 continue
             if j >= bhi:
                 break
-            k = newj2len[j] = j2lenget(j - 1, 0) + 1
+            k = newj2len[j] = j2len_get(j - 1, 0) + 1
             if k > bestsize:
                 besti, bestj, bestsize = i - k + 1, j - k + 1, k
         j2len = newj2len
-        j2lenget = j2len.get
+        j2len_get = j2len.get
 
     # Extend the best by non-junk tokens on each end.
     while (besti > alo and bestj > blo
@@ -127,8 +127,10 @@ def match_blocks(a, b, starta, lena, b2j, len_junk, matchables=frozenset()):
     queue = [(starta, lena, 0, len(b))]
     queue_append = queue.append
     queue_pop = queue.pop
+
     matching_blocks = []
     matching_blocks_append = matching_blocks.append
+
     while queue:
         alo, ahi, blo, bhi = queue_pop()
         i, j, k = x = find_longest_match(a, b, alo, ahi, blo, bhi, b2j, len_junk, matchables)
@@ -146,7 +148,10 @@ def match_blocks(a, b, starta, lena, b2j, len_junk, matchables=frozenset()):
 
     # collapse adjacent blocks
     i1 = j1 = k1 = 0
+
     non_adjacent = []
+    non_adjacent_append = non_adjacent.append
+
     for i2, j2, k2 in matching_blocks:
         # Is this block adjacent to i1, j1, k1?
         if i1 + k1 == i2 and j1 + k1 == j2:
@@ -159,9 +164,9 @@ def match_blocks(a, b, starta, lena, b2j, len_junk, matchables=frozenset()):
             # the dummy we started with), and make the second block the new block to
             # compare against.
             if k1:
-                non_adjacent.append((i1, j1, k1))
+                non_adjacent_append((i1, j1, k1))
             i1, j1, k1 = i2, j2, k2
     if k1:
-        non_adjacent.append((i1, j1, k1))
+        non_adjacent_append((i1, j1, k1))
 
     return map(Match._make, non_adjacent)

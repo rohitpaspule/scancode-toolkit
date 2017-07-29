@@ -560,14 +560,14 @@ class Rule(object):
     """
     __slots__ = (
         'rid', 'identifier',
-         'licenses', 'license_choice', 'license', 'licensing_identifier',
-         'false_positive',
-         'notes',
-         'data_file', 'text_file', '_text',
-         'length', 'low_length', 'high_length', '_thresholds',
-         'length_unique', 'low_unique', 'high_unique', '_thresholds_unique',
-         'minimum_coverage', 'relevance', 'has_stored_relevance',
-         'is_license'
+        'licenses', 'license_choice', 'license', 'licensing_identifier',
+        'false_positive',
+        'notes',
+        'data_file', 'text_file', '_text',
+        'length', 'low_length', 'high_length', '_thresholds',
+        'length_unique', 'low_unique', 'high_unique', '_thresholds_unique',
+        'minimum_coverage', 'relevance', 'has_stored_relevance',
+        'is_license'
     )
 
     def __init__(self, data_file=None, text_file=None, licenses=None,

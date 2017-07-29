@@ -27,8 +27,9 @@ from __future__ import print_function, absolute_import
 from array import array
 from hashlib import md5
 
-from licensedcode.spans import Span
+from licensedcode import MATCH_HASH
 from licensedcode.match import LicenseMatch
+from licensedcode.spans import Span
 
 
 """
@@ -53,9 +54,6 @@ if TRACE :
 else:
     def logger_debug(*args):
         pass
-
-
-MATCH_HASH = '1-hash'
 
 
 def tokens_hash(tokens):
