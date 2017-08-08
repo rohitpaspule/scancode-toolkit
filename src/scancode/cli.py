@@ -50,6 +50,7 @@ from commoncode import fileutils
 from commoncode import ignore
 
 import plugincode.output
+import plugincode.pre_scan
 
 from scancode import __version__ as version
 
@@ -91,6 +92,7 @@ except NameError:
 
 
 # this will init the plugins
+plugincode.pre_scan.initialize()
 plugincode.output.initialize()
 
 
@@ -239,6 +241,15 @@ class ScanCommand(BaseCommand):
     short_usage_help = '''
 Try 'scancode --help' for help on options and arguments.'''
 
+    def __init__(self, name, context_settings=None, callback=None,
+                 params=None, help=None, epilog=None, short_help=None,
+                 options_metavar='[OPTIONS]', add_help_option=True):
+        super(ScanCommand, self).__init__(name, context_settings, callback,
+                 params, help, epilog, short_help, options_metavar, add_help_option)
+        for name, plugin in plugincode.pre_scan.get_pre_scan_plugins().items():
+            option = ScanOption(('--' + name,), group=PRE_SCAN, **plugin.get_option_attrs())
+            self.params.append(option)
+
     def format_options(self, ctx, formatter):
         """
         Overridden from click.Command to write all options into the formatter in groups
@@ -349,8 +360,7 @@ def validate_exclusive(ctx, exclusive_options):
               help=('Set <output_file> format to one of: %s or use <format> '
                     'as the path to a custom template file' % ', '.join(plugincode.output.get_format_plugins())),
                      callback=validate_formats, group=OUTPUT, cls=ScanOption)
-@click.option('--ignore', default=None, multiple=True, metavar='<pattern>',
-              help=('Ignore files matching <pattern>.'), group=PRE_SCAN, cls=ScanOption)
+
 @click.option('--verbose', is_flag=True, default=False, help='Print verbose file-by-file progress messages.', group=OUTPUT, cls=ScanOption)
 @click.option('--quiet', is_flag=True, default=False, help='Do not print summary or progress messages.', group=OUTPUT, cls=ScanOption)
 
@@ -369,7 +379,7 @@ def scancode(ctx,
              copyright, license, package,
              email, url, info,
              license_score, license_text, only_findings, strip_root, full_root,
-             format, ignore, verbose, quiet, processes,
+             format, verbose, quiet, processes,
              diag, timeout, *args, **kwargs):
     """scan the <input> file or directory for origin clues and license and save results to the <output_file>.
 
@@ -400,7 +410,6 @@ def scancode(ctx,
         ('--only-findings', only_findings),
         ('--strip-root', strip_root),
         ('--full-root', full_root),
-        ('--ignore', ignore),
         ('--format', format),
         ('--diag', diag),
     ])
@@ -441,8 +450,12 @@ def scancode(ctx,
     scanners = OrderedDict(zip(possible_scans.keys(), zip(possible_scans.values(), scan_functions)))
 
     scans_cache_class = get_scans_cache_class()
-
-    user_ignore = {patt: 'User ignore: Supplied by --ignore' for patt in ignore}
+    plugins = []
+    for name, plugin in plugincode.pre_scan.get_pre_scan_plugins().items():
+        name = name.replace('-', '_')
+        options['--' + name] = kwargs[name]
+        if kwargs[name]:
+            plugins.append(plugin.get_instance(kwargs[name]))
 
     try:
         files_count, results, success = scan(
@@ -456,7 +469,7 @@ def scancode(ctx,
             scans_cache_class=scans_cache_class,
             strip_root=strip_root,
             full_root=full_root,
-            ignore=user_ignore)
+            plugins=plugins)
 
         if not quiet:
             echo_stderr('Saving results.', fg='green')
@@ -481,7 +494,7 @@ def scan(input_path,
          scans_cache_class=None,
          strip_root=False,
          full_root=False,
-         ignore=None):
+         plugins=None):
     """
     Return a tuple of (files_count, scan_results, success) where
     scan_results is an iterable and success is a boolean.
@@ -526,8 +539,7 @@ def scan(input_path,
 
     # maxtasksperchild helps with recycling processes in case of leaks
     pool = get_pool(processes=processes, maxtasksperchild=1000)
-    ignore = ignore or {}
-    resources = resource_paths(input_path, ignore)
+    resources = resource_paths(input_path, plugins=plugins)
     logfile_path = scans_cache_class().cache_files_log
     paths_with_error = []
     files_count = 0
@@ -711,7 +723,7 @@ def _scanit(paths, scanners, scans_cache_class, diag, timeout=DEFAULT_TIMEOUT):
     return success, rel_path
 
 
-def resource_paths(base_path, user_ignores):
+def resource_paths(base_path, plugins=None):
     """
     Yield tuples of (absolute path, base_path-relative path) for all the files found
     at base_path (either a directory or file) given an absolute base_path. Only yield
@@ -725,11 +737,11 @@ def resource_paths(base_path, user_ignores):
     base_path = os.path.abspath(os.path.normpath(os.path.expanduser(base_path)))
     base_is_dir = filetype.is_dir(base_path)
     len_base_path = len(base_path)
-    ignores = dict()
-    ignores.update(user_ignores)
-    ignores.update(ignore.ignores_VCS)
-    ignored = partial(ignore.is_ignored, ignores=ignores, unignores={})
+    ignored = partial(ignore.is_ignored, ignores=ignore.ignores_VCS, unignores={})
     resources = fileutils.resource_iter(base_path, ignored=ignored)
+    if plugins:
+        for plugin in plugins:
+            resources = plugin.process_resources(resources)
 
     for abs_path in resources:
         posix_path = fileutils.as_posixpath(abs_path)

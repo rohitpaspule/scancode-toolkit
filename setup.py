@@ -215,6 +215,14 @@ setup(
             'spdx-tv = formattedcode.format_spdx:write_spdx_tag_value',
             'spdx-rdf = formattedcode.format_spdx:write_spdx_rdf',
             'csv = formattedcode.format_csv:write_csv',
+        ],
+
+        # scancode_pre_scan is an entry point to define pre_scan plugins.
+        # See plugincode.pre_scan module for details and doc.
+        # note: the "name" of the entrypoint (e.g ignore) will be used for
+        # the option name which passes the input to the given pre_scan plugin
+        'scancode_pre_scan': [
+            'ignore = scancode.plugin_ignore:ProcessIgnore',
         ]
     },
 )
